@@ -1,8 +1,8 @@
 
-with open("test.md", "r") as markdown:
+with open("example.md", "r") as markdown:
   origin = markdown.read().splitlines()
 
-  with open('test.html', 'w') as html:
+  with open('example.html', 'w') as html:
     # html basics
     html.write("<!DOCTYPE html>")
     html.write("<html lang=\"en\">")
