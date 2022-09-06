@@ -36,6 +36,8 @@ with open("test.md", "r") as markdown:
     # <body>
     html.write("<body>")
     for line in origin:
+      if len(line) == 0:
+        continue
       if not line.startswith("?"):
 
         # parsing headers
