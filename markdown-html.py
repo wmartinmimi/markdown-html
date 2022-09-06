@@ -5,7 +5,7 @@ with open("example.md", "r") as markdown:
 
 if origin == None:
   exit()
-  
+
 with open('example.html', 'w') as html:
   # html basics
   html.write("<!DOCTYPE html>")
@@ -56,6 +56,14 @@ with open('example.html', 'w') as html:
           html.write("<h" + str(heading_size) + ">")
           html.write(line)
           html.write("</h" + str(heading_size) + ">")
+
+      elif line.startswith("["):
+        link_name = line[1:line.find("]")]
+        link = line[line.find("(") + 1:line.find(")")].strip(" ")
+        
+        html.write("<a href=\"" + link + "\">")
+        html.write(link_name)
+        html.write("</a>")
 
       # parsing plain text
       else:
