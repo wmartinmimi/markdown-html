@@ -159,7 +159,7 @@ with open('example.html', 'w') as html:
         img_link = origin[start:end].strip(" ")
           
         html.write("<img src=\"" + img_link + "\"")
-        html.write(" alt=\"" + img_name + "\" /img>")
+        html.write(" alt=\"" + img_name + "\" />")
 
       # parsing plain text
       else:
