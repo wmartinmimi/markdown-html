@@ -80,6 +80,18 @@ with open('example.html', 'w') as html:
             html.write(line)
             html.write("</h" + str(heading_size) + ">")
 
+        elif char == "-":
+          t = i
+          while char == "-":
+            t += 1
+            char = origin[t]
+
+          if origin[t + 1] == "\n":
+            i = t
+            html.write("</hr>")
+          continue
+            
+
         # for empty lines
         elif char == "\n":
           if is_paragraph:
@@ -167,8 +179,11 @@ with open('example.html', 'w') as html:
       
       i += 1
 
-  except:
+  except IndexError:
     unused = None
+
+  except Exception as error:
+    print(error)
         
   if is_paragraph:
     html.write("</p>")
