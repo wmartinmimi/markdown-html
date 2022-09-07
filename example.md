@@ -9,3 +9,5 @@ testing
 once upon a time
 
 look: [link](https://example.com)
+
+![example img](https://github.com/wmartinmimi.png)

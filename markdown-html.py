@@ -129,6 +129,38 @@ with open('example.html', 'w') as html:
         html.write(link_name)
         html.write("</a>")
 
+      # img
+      elif char == "!" and origin[i + 1] == "[":
+        i += 1
+        char = origin[i]
+
+        start = i + 1
+        
+        while not char == "]":
+          i += 1
+          char = origin[i]
+
+        end = i
+
+        img_name = origin[start:end]
+
+        while not char == "(":
+          i += 1
+          char = origin[i]
+
+        start = i + 1
+
+        while not char == ")":
+          i += 1
+          char = origin[i]
+
+        end = i
+
+        img_link = origin[start:end].strip(" ")
+          
+        html.write("<img src=\"" + img_link + "\"")
+        html.write(" alt=\"" + img_name + "\" /img>")
+
       # parsing plain text
       else:
         html.write(char)
