@@ -1,194 +1,211 @@
+import os
 
-origin = None
-with open("example.md", "r") as markdown:
-  origin = markdown.read()
+def openMarkDown(path):
+  origin = None
+  with open(path, "r") as markdown:
+    origin = markdown.read()
 
-if origin == None:
-  exit()
+  if origin == None:
+    print("Cannot open: " + path)
+    return
 
-with open('example.html', 'w') as html:
-  # html basics
-  html.write("<!DOCTYPE html>")
-  html.write("<html lang=\"en\">")
+  html_name = path[::-1][path[::-1].find(".") + 1:len(path[::-1])][::-1] + ".html"
 
-  # <head>
-  html.write("<head>")
+  with open(html_name, 'w') as html:
+    # html basics
+    html.write("<!DOCTYPE html>")
+    html.write("<html lang=\"en\">")
 
-  # title
-  html.write("<title>")
-  has_title = False
-  for line in origin:
-    if has_title:
-      break
-    if line.startswith("?title:"):
-      line = line.removeprefix("?title:").rstrip(" ")
-      html.write(line)
-      has_title = True
-  
-  for line in origin.splitlines():
-    if has_title:
-      break
-    if line.startswith("#"):
-      line = line.removeprefix("#").lstrip(" ").rstrip("#").rstrip(" ")
-      html.write(line)
-      has_title = True
-  
-  html.write("</title>")
+    # <head>
+    html.write("<head>")
 
-  html.write("</head>")
+    # title
+    html.write("<title>")
+    has_title = False
+    for line in origin:
+      if has_title:
+        break
+      if line.startswith("?title:"):
+        line = line.removeprefix("?title:").rstrip(" ")
+        html.write(line)
+        has_title = True
+    
+    for line in origin.splitlines():
+      if has_title:
+        break
+      if line.startswith("#"):
+        line = line.removeprefix("#").lstrip(" ").rstrip("#").rstrip(" ")
+        html.write(line)
+        has_title = True
+    
+    html.write("</title>")
 
-  # <body>
-  html.write("<body>")
+    html.write("</head>")
 
-  i = 0
-  size = len(origin)
-  is_paragraph = False
-  try:
-    while i < size:
-      char = origin[i]
-      if char == "\n" or i == 0:
-        # for first chars
-        if not i == 0:
+    # <body>
+    html.write("<body>")
+
+    i = 0
+    size = len(origin)
+    is_paragraph = False
+    try:
+      while i < size:
+        char = origin[i]
+        if char == "\n" or i == 0:
+          # for first chars
+          if not i == 0:
+            i += 1
+            char = origin[i]
+
+          # for special hooks
+          if char == "?":
+            while not char == "\n":
+              i += 1
+              char = origin[i]
+
+          # parsing headers
+          elif char == "#":
+            heading_size = 0
+            while char == "#":
+              i += 1
+              char = origin[i]
+              heading_size += 1
+            start = i + 1
+
+            while not char == "\n":
+              i += 1
+              char = origin[i]
+
+            end = i
+
+            line = origin[start: end]
+            line = line.lstrip(" ").rstrip("#").rstrip(" ")
+            if heading_size > 0:
+              html.write("<h" + str(heading_size) + ">")
+              html.write(line)
+              html.write("</h" + str(heading_size) + ">")
+
+          elif char == "-":
+            t = i
+            while char == "-":
+              t += 1
+              char = origin[t]
+
+            if origin[t + 1] == "\n":
+              i = t
+              html.write("</hr>")
+            continue
+              
+
+          # for empty lines
+          elif char == "\n":
+            if is_paragraph:
+              html.write("</p>")
+              is_paragraph = False
+            continue
+          
+          else:
+            i -= 1
           i += 1
-          char = origin[i]
+          continue
 
-        # for special hooks
-        if char == "?":
-          while not char == "\n":
-            i += 1
-            char = origin[i]
+        if not is_paragraph:
+          html.write("<p>")
+          is_paragraph = True
 
-        # parsing headers
-        elif char == "#":
-          heading_size = 0
-          while char == "#":
-            i += 1
-            char = origin[i]
-            heading_size += 1
+        elif origin[i - 1] == "\n":
+          html.write(" ")
+
+        # parsing links
+        if char == "[":
           start = i + 1
-
-          while not char == "\n":
+          
+          while not char == "]":
             i += 1
             char = origin[i]
 
           end = i
 
-          line = origin[start: end]
-          line = line.lstrip(" ").rstrip("#").rstrip(" ")
-          if heading_size > 0:
-            html.write("<h" + str(heading_size) + ">")
-            html.write(line)
-            html.write("</h" + str(heading_size) + ">")
+          link_name = origin[start:end]
 
-        elif char == "-":
-          t = i
-          while char == "-":
-            t += 1
-            char = origin[t]
+          while not char == "(":
+            i += 1
+            char = origin[i]
 
-          if origin[t + 1] == "\n":
-            i = t
-            html.write("</hr>")
-          continue
+          start = i + 1
+
+          while not char == ")":
+            i += 1
+            char = origin[i]
+
+          end = i
+
+          link = origin[start:end].strip(" ")
             
+          html.write("<a href=\"" + link + "\">")
+          html.write(link_name)
+          html.write("</a>")
 
-        # for empty lines
-        elif char == "\n":
-          if is_paragraph:
-            html.write("</p>")
-            is_paragraph = False
-          continue
-        
+        # img
+        elif char == "!" and origin[i + 1] == "[":
+          i += 1
+          char = origin[i]
+
+          start = i + 1
+          
+          while not char == "]":
+            i += 1
+            char = origin[i]
+
+          end = i
+
+          img_name = origin[start:end]
+
+          while not char == "(":
+            i += 1
+            char = origin[i]
+
+          start = i + 1
+
+          while not char == ")":
+            i += 1
+            char = origin[i]
+
+          end = i
+
+          img_link = origin[start:end].strip(" ")
+            
+          html.write("<img src=\"" + img_link + "\"")
+          html.write(" alt=\"" + img_name + "\" />")
+
+        # parsing plain text
         else:
-          i -= 1
+          html.write(char)
+        
         i += 1
-        continue
 
-      if not is_paragraph:
-        html.write("<p>")
-        is_paragraph = True
+    except IndexError:
+      unused = None
 
-      elif origin[i - 1] == "\n":
-        html.write(" ")
-
-      # parsing links
-      if char == "[":
-        start = i + 1
-        
-        while not char == "]":
-          i += 1
-          char = origin[i]
-
-        end = i
-
-        link_name = origin[start:end]
-
-        while not char == "(":
-          i += 1
-          char = origin[i]
-
-        start = i + 1
-
-        while not char == ")":
-          i += 1
-          char = origin[i]
-
-        end = i
-
-        link = origin[start:end].strip(" ")
+    except Exception as error:
+      print(error)
           
-        html.write("<a href=\"" + link + "\">")
-        html.write(link_name)
-        html.write("</a>")
+    if is_paragraph:
+      html.write("</p>")
+      is_paragraph = False
+    html.write("</body>")
 
-      # img
-      elif char == "!" and origin[i + 1] == "[":
-        i += 1
-        char = origin[i]
+    # html basics
+    html.write("</html>")
 
-        start = i + 1
-        
-        while not char == "]":
-          i += 1
-          char = origin[i]
 
-        end = i
 
-        img_name = origin[start:end]
+def openRoot(root):
+  for path, subdirs, files in os.walk(root):
+    for name in files:
+      if name.endswith(".md"):
+        openMarkDown(os.path.join(path, name))
+      if name.endswith(".markdown"):
+        openMarkDown(os.path.join(path, name))
 
-        while not char == "(":
-          i += 1
-          char = origin[i]
-
-        start = i + 1
-
-        while not char == ")":
-          i += 1
-          char = origin[i]
-
-        end = i
-
-        img_link = origin[start:end].strip(" ")
-          
-        html.write("<img src=\"" + img_link + "\"")
-        html.write(" alt=\"" + img_name + "\" />")
-
-      # parsing plain text
-      else:
-        html.write(char)
-      
-      i += 1
-
-  except IndexError:
-    unused = None
-
-  except Exception as error:
-    print(error)
-        
-  if is_paragraph:
-    html.write("</p>")
-    is_paragraph = False
-  html.write("</body>")
-
-  # html basics
-  html.write("</html>")
+openRoot(os.getcwd())
