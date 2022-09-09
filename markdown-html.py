@@ -62,133 +62,141 @@ def openMarkDown(path):
     i = 0
     size = len(origin)
     is_paragraph = False
-    try:
-      while i < size:
-        char = origin[i]
-        if char == "\n" or i == 0:
-          # for first chars
-          if not i == 0:
+
+    while i < size:
+      char = origin[i]
+      if char == "\n" or i == 0:
+
+        if i + 1 >= size:
+          break
+
+        # for first chars
+        if not i == 0:
+          i += 1
+          char = origin[i]
+
+        # for special hooks
+        if char == "?":
+          line = trimTo(origin, i, "\n")
+          i = newI(i, line)
+
+        # parsing headers
+        elif char == "#":
+          heading_size = 0
+          while char == "#":
             i += 1
             char = origin[i]
+            heading_size += 1
 
-          # for special hooks
-          if char == "?":
-            line = trimTo(origin, i, "\n")
-            i = newI(i, line)
+          line = trimTo(origin, i, "\n")
+          i = newI(i, line)
 
-          # parsing headers
-          elif char == "#":
-            heading_size = 0
-            while char == "#":
-              i += 1
-              char = origin[i]
-              heading_size += 1
+          line = line.lstrip(" ").rstrip("#").rstrip(" ")
+          if heading_size > 0:
+            html.write("<h" + str(heading_size) + ">")
+            html.write(line)
+            html.write("</h" + str(heading_size) + ">")
 
-            line = trimTo(origin, i, "\n")
-            i = newI(i, line)
+        elif char == "-":
 
-            line = line.lstrip(" ").rstrip("#").rstrip(" ")
-            if heading_size > 0:
-              html.write("<h" + str(heading_size) + ">")
-              html.write(line)
-              html.write("</h" + str(heading_size) + ">")
+          # horizontal line
+          t = i
+          while char == "-":
+            t += 1
+            char = origin[t]
 
-          elif char == "-":
+          if origin[t + 1] == "\n":
+            i = t
+            html.write("</hr>")
+            continue
 
-            # horizontal line
-            t = i
-            while char == "-":
-              t += 1
-              char = origin[t]
-
-            if origin[t + 1] == "\n":
-              i = t
-              html.write("</hr>")
-              continue
-
-            # unordered list
-            html.write("<ul>")
+          # unordered list
+          html.write("<ul>")
+          
+          while True:
             html.write("<li>")
 
             line = trimTo(origin, i, "\n")
             i = newI(i, line)
 
             html.write(line.strip(" "))
+
             html.write("</li>")
-            html.write("</ul>")
-            continue
-              
 
-          # for empty lines
-          elif char == "\n":
-            if is_paragraph:
-              html.write("</p>")
-              is_paragraph = False
-            continue
+            if len(origin) > i or origin[i + 1] != "-":
+              break
+
+            i += 1
           
-          else:
-            i -= 1
-          i += 1
+          html.write("</ul>")
           continue
-
-        if not is_paragraph:
-          html.write("<p>")
-          is_paragraph = True
-
-        elif origin[i - 1] == "\n":
-          html.write(" ")
-
-        # parsing links
-        if char == "[":
-
-          link_name = trimTo(origin, i, "]")
-          i = newI(i, link_name)
-
-          char = origin[i]
-
-          while not char == "(":
-            i += 1
-            char = origin[i]
-
-          link = trimTo(origin, i, ")").strip(" ")
-          i = newI(i, link)
             
-          html.write("<a href=\"" + link + "\">")
-          html.write(link_name)
-          html.write("</a>")
 
-        # img
-        elif char == "!" and origin[i + 1] == "[":
+        # for empty lines
+        elif char == "\n":
+          if is_paragraph:
+            html.write("</p>")
+            is_paragraph = False
+          continue
+        
+        else:
+          i -= 1
+        i += 1
+        continue
+
+      if not is_paragraph:
+        html.write("<p>")
+        is_paragraph = True
+
+      elif origin[i - 1] == "\n":
+        html.write(" ")
+
+      # parsing links
+      if char == "[":
+
+        link_name = trimTo(origin, i, "]")
+        i = newI(i, link_name)
+
+        char = origin[i]
+
+        while not char == "(":
           i += 1
           char = origin[i]
 
-          img_name = trimTo(origin, i, "]").strip(" ")
-          i = newI(i, img_name)
+        link = trimTo(origin, i, ")")
+        i = newI(i, link)
+          
+        html.write("<a href=\"" + link.strip(" ") + "\">")
+        html.write(link_name)
+        html.write("</a>")
 
+      # img
+      elif char == "!" and origin[i + 1] == "[":
+        i += 1
+        char = origin[i]
+
+        img_name = trimTo(origin, i, "]")
+        i = newI(i, img_name)
+
+        char = origin[i]
+
+        while not char == "(":
+          i += 1
           char = origin[i]
 
-          while not char == "(":
-            i += 1
-            char = origin[i]
-
-          img_link = trimTo(origin, i, ")").strip(" ")
-          i = newI(i, img_link)
-            
-          html.write("<img src=\"" + img_link + "\"")
-          html.write(" alt=\"" + img_name + "\" />")
-
-        # parsing plain text
-        else:
-          html.write(char)
-        
-        i += 1
-
-    except IndexError:
-      unused = None
-
-    except Exception as error:
-      print(error)
+        img_link = trimTo(origin, i, ")")
+        i = newI(i, img_link)
           
+        html.write("<img src=\"" + img_link.strip(" ") + "\"")
+        html.write(" alt=\"" + img_name + "\" />")
+
+      # parsing plain text
+      else:
+        html.write(char)
+      
+      i += 1
+          
+    # end paragraph
     if is_paragraph:
       html.write("</p>")
       is_paragraph = False
