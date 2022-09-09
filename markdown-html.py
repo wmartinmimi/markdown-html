@@ -1,5 +1,19 @@
 import os
 
+# extract string from index "start" to character "trim_char"
+def trimTo(origin, start, trim_char):
+  i = start
+  char = origin[i]
+  while char != trim_char:
+    i += 1
+    char = origin[i]
+
+  return origin[start + 1:i]
+  
+def newI(i, line):
+  return i + len(line) + 1
+
+# open markdown file for converting to html
 def openMarkDown(path):
   origin = None
   with open(path, "r") as markdown:
@@ -22,7 +36,7 @@ def openMarkDown(path):
     # title
     html.write("<title>")
     has_title = False
-    for line in origin:
+    for line in origin.splitlines():
       if has_title:
         break
       if line.startswith("?title:"):
@@ -34,7 +48,7 @@ def openMarkDown(path):
       if has_title:
         break
       if line.startswith("#"):
-        line = line.removeprefix("#").lstrip(" ").rstrip("#").rstrip(" ")
+        line = line.strip("#").strip(" ")
         html.write(line)
         has_title = True
     
@@ -59,9 +73,8 @@ def openMarkDown(path):
 
           # for special hooks
           if char == "?":
-            while not char == "\n":
-              i += 1
-              char = origin[i]
+            line = trimTo(origin, i, "\n")
+            i = newI(i, line)
 
           # parsing headers
           elif char == "#":
@@ -70,15 +83,10 @@ def openMarkDown(path):
               i += 1
               char = origin[i]
               heading_size += 1
-            start = i + 1
 
-            while not char == "\n":
-              i += 1
-              char = origin[i]
+            line = trimTo(origin, i, "\n")
+            i = newI(i, line)
 
-            end = i
-
-            line = origin[start: end]
             line = line.lstrip(" ").rstrip("#").rstrip(" ")
             if heading_size > 0:
               html.write("<h" + str(heading_size) + ">")
@@ -86,6 +94,8 @@ def openMarkDown(path):
               html.write("</h" + str(heading_size) + ">")
 
           elif char == "-":
+
+            # horizontal line
             t = i
             while char == "-":
               t += 1
@@ -94,6 +104,18 @@ def openMarkDown(path):
             if origin[t + 1] == "\n":
               i = t
               html.write("</hr>")
+              continue
+
+            # unordered list
+            html.write("<ul>")
+            html.write("<li>")
+
+            line = trimTo(origin, i, "\n")
+            i = newI(i, line)
+
+            html.write(line.strip(" "))
+            html.write("</li>")
+            html.write("</ul>")
             continue
               
 
@@ -118,29 +140,18 @@ def openMarkDown(path):
 
         # parsing links
         if char == "[":
-          start = i + 1
-          
-          while not char == "]":
-            i += 1
-            char = origin[i]
 
-          end = i
+          link_name = trimTo(origin, i, "]")
+          i = newI(i, link_name)
 
-          link_name = origin[start:end]
+          char = origin[i]
 
           while not char == "(":
             i += 1
             char = origin[i]
 
-          start = i + 1
-
-          while not char == ")":
-            i += 1
-            char = origin[i]
-
-          end = i
-
-          link = origin[start:end].strip(" ")
+          link = trimTo(origin, i, ")").strip(" ")
+          i = newI(i, link)
             
           html.write("<a href=\"" + link + "\">")
           html.write(link_name)
@@ -151,29 +162,17 @@ def openMarkDown(path):
           i += 1
           char = origin[i]
 
-          start = i + 1
-          
-          while not char == "]":
-            i += 1
-            char = origin[i]
+          img_name = trimTo(origin, i, "]").strip(" ")
+          i = newI(i, img_name)
 
-          end = i
-
-          img_name = origin[start:end]
+          char = origin[i]
 
           while not char == "(":
             i += 1
             char = origin[i]
 
-          start = i + 1
-
-          while not char == ")":
-            i += 1
-            char = origin[i]
-
-          end = i
-
-          img_link = origin[start:end].strip(" ")
+          img_link = trimTo(origin, i, ")").strip(" ")
+          i = newI(i, img_link)
             
           html.write("<img src=\"" + img_link + "\"")
           html.write(" alt=\"" + img_name + "\" />")
@@ -198,8 +197,7 @@ def openMarkDown(path):
     # html basics
     html.write("</html>")
 
-
-
+# open directory containing the markdown
 def openRoot(root):
   for path, subdirs, files in os.walk(root):
     for name in files:
