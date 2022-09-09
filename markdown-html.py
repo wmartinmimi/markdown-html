@@ -33,6 +33,38 @@ def openMarkDown(path):
     # <head>
     html.write("<head>")
 
+    # <style>
+    html.write("<style>")
+    html.write(":root {")
+    html.write("--background-color: #F0F0F0;")
+    html.write("--text-color: #333333;")
+    html.write("--link-color: rgb(0, 125, 151);")
+    html.write("--visited-link-color: rgb(125, 49, 134);")
+    html.write("}")
+    html.write("@media (prefers-color-scheme: dark) {")
+    html.write(":root {")
+    html.write("--background-color: #0d1717;")
+    html.write("--text-color: #b1b1b1;")
+    html.write("--link-color: rgb(10, 77, 108);")
+    html.write("--visited-link-color: rgb(86, 10, 95);")
+    html.write("}")
+    html.write("}")
+    html.write("* {")
+    html.write("font-family: Helvetica, Verdana, Arial, sans-serif;")
+    html.write("letter-spacing: 0.02em;")
+    html.write("}")
+    html.write("body {")
+    html.write("background-color: var(--background-color);")
+    html.write("color: var(--text-color);")
+    html.write("}")
+    html.write("a {")
+    html.write("text-decoration: none;")
+    html.write("color: var(--link-color)")
+    html.write("}")
+    html.write("a:visited {")
+    html.write("color: var(--visited-link-color);")
+    html.write("}")
+    html.write("</style>")
     # title
     html.write("<title>")
     has_title = False
@@ -107,12 +139,14 @@ def openMarkDown(path):
 
           if origin[t + 1] == "\n":
             i = t
-            html.write("</hr>")
+            html.write("<hr/>")
             continue
 
           # unordered list
           html.write("<ul>")
           
+          indention = 0
+          level = 0
           while True:
             html.write("<li>")
 
@@ -123,7 +157,40 @@ def openMarkDown(path):
 
             html.write("</li>")
 
-            if len(origin) > i or origin[i + 1] != "-":
+
+            if len(origin) <= i + 1:
+              while level > 0:
+                level -= 1
+                html.write("</ul>")
+              break
+
+            if origin[i + 1] != "-" or level > 0:
+              this_indention = 0
+              t = i + 1
+              char = origin[t]
+              while len(origin) > t and char == " ":
+                this_indention += 1
+                t += 1
+                char = origin[t]
+
+              if this_indention > indention and origin[t] == "-":
+                indention = this_indention
+                html.write("<ul>")
+                i = t
+                level += 1
+                continue
+              
+              elif this_indention < indention and origin[t] == "-":
+                indention = this_indention
+                html.write("</ul>")
+                i = t
+                level -= 1
+                continue
+
+              elif origin[t] == "-":
+                i = t
+                continue
+
               break
 
             i += 1
