@@ -1,281 +1,288 @@
 import os
 
 # extract string from index "start" to character "trim_char"
-def trimTo(origin, start, trim_char):
-  i = start
-  char = origin[i]
-  while char != trim_char:
-    i += 1
-    char = origin[i]
 
-  return origin[start + 1:i]
-  
+
+def trimTo(origin, start, trim_char):
+    i = start
+    char = origin[i]
+    while char != trim_char:
+        i += 1
+        char = origin[i]
+
+    return origin[start + 1:i]
+
+
 def newI(i, line):
-  return i + len(line) + 1
+    return i + len(line) + 1
 
 # open markdown file for converting to html
+
+
 def openMarkDown(path):
-  origin = None
-  with open(path, "r") as markdown:
-    origin = markdown.read()
+    origin = None
+    with open(path, "r") as markdown:
+        origin = markdown.read()
 
-  if origin == None:
-    print("Cannot open: " + path)
-    return
+    if origin == None:
+        print("Cannot open: " + path)
+        return
 
-  html_name = path[::-1][path[::-1].find(".") + 1:len(path[::-1])][::-1] + ".html"
+    html_name = path[0:path.rfind(".")] + '.html'
 
-  with open(html_name, 'w') as html:
-    # html basics
-    html.write("<!DOCTYPE html>")
-    html.write("<html lang=\"en\">")
+    with open(html_name, 'w') as html:
+        # html basics
+        html.write("<!DOCTYPE html>")
+        html.write("<html lang=\"en\">")
 
-    # <head>
-    html.write("<head>")
-    html.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+        # <head>
+        html.write("<head>")
+        html.write(
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
 
-    # <style>
-    html.write("<style>")
-    html.write(":root {")
-    html.write("--background-color: #F0F0F0;")
-    html.write("--text-color: #333333;")
-    html.write("}")
-    html.write("@media (prefers-color-scheme: dark) {")
-    html.write(":root {")
-    html.write("--background-color: #181819;")
-    html.write("--text-color: #b0b0b0;")
-    html.write("}")
-    html.write("}")
-    html.write("* {")
-    html.write("font-family: Helvetica, Verdana, Arial, sans-serif;")
-    html.write("letter-spacing: 0.02em;")
-    html.write("}")
-    html.write("body {")
-    html.write("background-color: var(--background-color);")
-    html.write("color: var(--text-color);")
-    html.write("}")
-    html.write("a {")
-    html.write("text-decoration: none;")
-    html.write("color: rgb(0, 125, 151);")
-    html.write("}")
-    html.write("a:visited {")
-    html.write("color: rgb(125, 49, 134);")
-    html.write("}")
-    html.write("</style>")
-    # title
-    html.write("<title>")
-    has_title = False
-    for line in origin.splitlines():
-      if has_title:
-        break
-      if line.startswith("?title:"):
-        line = line.removeprefix("?title:").rstrip(" ")
-        html.write(line)
-        has_title = True
-    
-    for line in origin.splitlines():
-      if has_title:
-        break
-      if line.startswith("#"):
-        line = line.strip("#").strip(" ")
-        html.write(line)
-        has_title = True
-    
-    html.write("</title>")
+        # <style>
+        html.write("<style>")
+        html.write(":root {")
+        html.write("--background-color: #F0F0F0;")
+        html.write("--text-color: #333333;")
+        html.write("}")
+        html.write("@media (prefers-color-scheme: dark) {")
+        html.write(":root {")
+        html.write("--background-color: #181819;")
+        html.write("--text-color: #b0b0b0;")
+        html.write("}")
+        html.write("}")
+        html.write("* {")
+        html.write("font-family: Helvetica, Verdana, Arial, sans-serif;")
+        html.write("letter-spacing: 0.02em;")
+        html.write("}")
+        html.write("body {")
+        html.write("background-color: var(--background-color);")
+        html.write("color: var(--text-color);")
+        html.write("}")
+        html.write("a {")
+        html.write("text-decoration: none;")
+        html.write("color: rgb(0, 125, 151);")
+        html.write("}")
+        html.write("a:visited {")
+        html.write("color: rgb(125, 49, 134);")
+        html.write("}")
+        html.write("</style>")
+        # title
+        html.write("<title>")
+        has_title = False
+        for line in origin.splitlines():
+            if has_title:
+                break
+            if line.startswith("?title:"):
+                line = line.removeprefix("?title:").rstrip(" ")
+                html.write(line)
+                has_title = True
 
-    html.write("</head>")
+        for line in origin.splitlines():
+            if has_title:
+                break
+            if line.startswith("#"):
+                line = line.strip("#").strip(" ")
+                html.write(line)
+                has_title = True
 
-    # <body>
-    html.write("<body>")
+        html.write("</title>")
 
-    i = 0
-    size = len(origin)
-    is_paragraph = False
+        html.write("</head>")
 
-    while i < size:
-      char = origin[i]
-      if char == "\n" or i == 0:
+        # <body>
+        html.write("<body>")
 
-        if i + 1 >= size:
-          break
+        i = 0
+        size = len(origin)
+        is_paragraph = False
 
-        # for first chars
-        if not i == 0:
-          i += 1
-          char = origin[i]
-
-        # for special hooks
-        if char == "?":
-          line = trimTo(origin, i, "\n")
-          i = newI(i, line)
-
-        # parsing headers
-        elif char == "#":
-          heading_size = 0
-          while char == "#":
-            i += 1
+        while i < size:
             char = origin[i]
-            heading_size += 1
+            if char == "\n" or i == 0:
 
-          line = trimTo(origin, i, "\n")
-          i = newI(i, line)
+                if i + 1 >= size:
+                    break
 
-          line = line.lstrip(" ").rstrip("#").rstrip(" ")
-          if heading_size > 0:
-            html.write("<h" + str(heading_size) + ">")
-            html.write(line)
-            html.write("</h" + str(heading_size) + ">")
+                # for first chars
+                if not i == 0:
+                    i += 1
+                    char = origin[i]
 
-        elif char == "-":
+                # for special hooks
+                if char == "?":
+                    line = trimTo(origin, i, "\n")
+                    i = newI(i, line)
 
-          # horizontal line
-          t = i
-          while char == "-":
-            t += 1
-            char = origin[t]
+                # parsing headers
+                elif char == "#":
+                    heading_size = 0
+                    while char == "#":
+                        i += 1
+                        char = origin[i]
+                        heading_size += 1
 
-          if origin[t + 1] == "\n":
-            i = t
-            html.write("<hr/>")
-            continue
+                    line = trimTo(origin, i, "\n")
+                    i = newI(i, line)
 
-          # unordered list
-          html.write("<ul>")
-          
-          indention = 0
-          level = 0
-          while True:
-            html.write("<li>")
+                    line = line.lstrip(" ").rstrip("#").rstrip(" ")
+                    if heading_size > 0:
+                        html.write("<h" + str(heading_size) + ">")
+                        html.write(line)
+                        html.write("</h" + str(heading_size) + ">")
 
-            line = trimTo(origin, i, "\n")
-            i = newI(i, line)
+                elif char == "-":
 
-            html.write(line.strip(" "))
+                    # horizontal line
+                    t = i
+                    while char == "-":
+                        t += 1
+                        char = origin[t]
 
-            html.write("</li>")
+                    if origin[t + 1] == "\n":
+                        i = t
+                        html.write("<hr/>")
+                        continue
 
+                    # unordered list
+                    html.write("<ul>")
 
-            if len(origin) <= i + 1:
-              while level > 0:
-                level -= 1
-                html.write("</ul>")
-              break
+                    indention = 0
+                    level = 0
+                    while True:
+                        html.write("<li>")
 
-            if origin[i + 1] != "-" or level > 0:
-              this_indention = 0
-              t = i + 1
-              char = origin[t]
-              while len(origin) > t and char == " ":
-                this_indention += 1
-                t += 1
-                char = origin[t]
+                        line = trimTo(origin, i, "\n")
+                        i = newI(i, line)
 
-              if this_indention > indention and origin[t] == "-":
-                indention = this_indention
-                html.write("<ul>")
-                i = t
-                level += 1
+                        html.write(line.strip(" "))
+
+                        html.write("</li>")
+
+                        if len(origin) <= i + 1:
+                            while level > 0:
+                                level -= 1
+                                html.write("</ul>")
+                            break
+
+                        if origin[i + 1] != "-" or level > 0:
+                            this_indention = 0
+                            t = i + 1
+                            char = origin[t]
+                            while len(origin) > t and char == " ":
+                                this_indention += 1
+                                t += 1
+                                char = origin[t]
+
+                            if this_indention > indention and origin[t] == "-":
+                                indention = this_indention
+                                html.write("<ul>")
+                                i = t
+                                level += 1
+                                continue
+
+                            elif this_indention < indention and origin[t] == "-":
+                                indention = this_indention
+                                html.write("</ul>")
+                                i = t
+                                level -= 1
+                                continue
+
+                            elif origin[t] == "-":
+                                i = t
+                                continue
+
+                            break
+
+                        i += 1
+
+                    html.write("</ul>")
+                    continue
+
+                # for empty lines
+                elif char == "\n":
+                    if is_paragraph:
+                        html.write("</p>")
+                        is_paragraph = False
+                    continue
+
+                else:
+                    i -= 1
+                i += 1
                 continue
-              
-              elif this_indention < indention and origin[t] == "-":
-                indention = this_indention
-                html.write("</ul>")
-                i = t
-                level -= 1
-                continue
 
-              elif origin[t] == "-":
-                i = t
-                continue
+            if not is_paragraph:
+                html.write("<p>")
+                is_paragraph = True
 
-              break
+            elif origin[i - 1] == "\n":
+                html.write(" ")
+
+            # parsing links
+            if char == "[":
+
+                link_name = trimTo(origin, i, "]")
+                i = newI(i, link_name)
+
+                char = origin[i]
+
+                while not char == "(":
+                    i += 1
+                    char = origin[i]
+
+                link = trimTo(origin, i, ")")
+                i = newI(i, link)
+
+                html.write("<a href=\"" + link.strip(" ") + "\">")
+                html.write(link_name)
+                html.write("</a>")
+
+            # img
+            elif char == "!" and origin[i + 1] == "[":
+                i += 1
+                char = origin[i]
+
+                img_name = trimTo(origin, i, "]")
+                i = newI(i, img_name)
+
+                char = origin[i]
+
+                while not char == "(":
+                    i += 1
+                    char = origin[i]
+
+                img_link = trimTo(origin, i, ")")
+                i = newI(i, img_link)
+
+                html.write("<img src=\"" + img_link.strip(" ") + "\"")
+                html.write(" alt=\"" + img_name + "\" />")
+
+            # parsing plain text
+            else:
+                html.write(char)
 
             i += 1
-          
-          html.write("</ul>")
-          continue
-            
 
-        # for empty lines
-        elif char == "\n":
-          if is_paragraph:
+        # end paragraph
+        if is_paragraph:
             html.write("</p>")
             is_paragraph = False
-          continue
-        
-        else:
-          i -= 1
-        i += 1
-        continue
+        html.write("</body>")
 
-      if not is_paragraph:
-        html.write("<p>")
-        is_paragraph = True
-
-      elif origin[i - 1] == "\n":
-        html.write(" ")
-
-      # parsing links
-      if char == "[":
-
-        link_name = trimTo(origin, i, "]")
-        i = newI(i, link_name)
-
-        char = origin[i]
-
-        while not char == "(":
-          i += 1
-          char = origin[i]
-
-        link = trimTo(origin, i, ")")
-        i = newI(i, link)
-          
-        html.write("<a href=\"" + link.strip(" ") + "\">")
-        html.write(link_name)
-        html.write("</a>")
-
-      # img
-      elif char == "!" and origin[i + 1] == "[":
-        i += 1
-        char = origin[i]
-
-        img_name = trimTo(origin, i, "]")
-        i = newI(i, img_name)
-
-        char = origin[i]
-
-        while not char == "(":
-          i += 1
-          char = origin[i]
-
-        img_link = trimTo(origin, i, ")")
-        i = newI(i, img_link)
-          
-        html.write("<img src=\"" + img_link.strip(" ") + "\"")
-        html.write(" alt=\"" + img_name + "\" />")
-
-      # parsing plain text
-      else:
-        html.write(char)
-      
-      i += 1
-          
-    # end paragraph
-    if is_paragraph:
-      html.write("</p>")
-      is_paragraph = False
-    html.write("</body>")
-
-    # html basics
-    html.write("</html>")
+        # html basics
+        html.write("</html>")
 
 # open directory containing the markdown
+
+
 def openRoot(root):
-  for path, subdirs, files in os.walk(root):
-    for name in files:
-      if name.endswith(".md"):
-        openMarkDown(os.path.join(path, name))
-      if name.endswith(".markdown"):
-        openMarkDown(os.path.join(path, name))
+    for path, subdirs, files in os.walk(root):
+        for name in files:
+            if name.endswith(".md"):
+                openMarkDown(os.path.join(path, name))
+            if name.endswith(".markdown"):
+                openMarkDown(os.path.join(path, name))
+
 
 openRoot(os.getcwd())
