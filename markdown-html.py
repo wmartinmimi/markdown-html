@@ -32,6 +32,7 @@ def openMarkDown(path):
 
     # <head>
     html.write("<head>")
+    html.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
 
     # <style>
     html.write("<style>")
@@ -41,8 +42,8 @@ def openMarkDown(path):
     html.write("}")
     html.write("@media (prefers-color-scheme: dark) {")
     html.write(":root {")
-    html.write("--background-color: #0d1717;")
-    html.write("--text-color: #b1b1b1;")
+    html.write("--background-color: #181819;")
+    html.write("--text-color: #b0b0b0;")
     html.write("}")
     html.write("}")
     html.write("* {")
