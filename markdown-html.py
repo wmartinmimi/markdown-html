@@ -1,5 +1,6 @@
 import os
 
+
 class Tracker():
 
   def __init__(self, parser):
@@ -15,6 +16,8 @@ class Tracker():
     self.parser.rollback()
 
 # a parser for easier parsing operations
+
+
 class Parser():
 
   def __init__(self, s):
@@ -42,9 +45,9 @@ class Parser():
     self.checkpoints = self.checkpoints[1: len(self.checkpoints)]
 
   # move index by 1 and return the next character
-  def next(self):
-    self.i += 1
-    return self.current()
+    def next(self):
+      self.i += 1
+      return self.current()
 
   # return current character
   def current(self):
@@ -95,249 +98,254 @@ class Parser():
     self.i += i
 
 # open markdown file for converting to html
+
+
 def openMarkDown(path):
-    origin = None
-    with open(path, "r") as markdown:
-        origin = markdown.read()
+  origin = None
+  with open(path, "r") as markdown:
+    origin = markdown.read()
 
-    if origin == None:
-        print("Cannot open: " + path)
-        return
+  if origin == None:
+    print("Cannot open: " + path)
+    return
 
-    # easier parsing for later
-    origin = "\n" + origin
+  # easier parsing for later
+  origin = "\n" + origin
 
-    html_name = path[0:path.rfind(".")] + '.html'
+  html_name = path[0:path.rfind(".")] + '.html'
 
-    with open(html_name, 'w') as html:
-        # html basics
-        html.write("<!DOCTYPE html>")
-        html.write("<html lang=\"en\">")
+  with open(html_name, 'w') as html:
+    # html basics
+    html.write("<!DOCTYPE html>")
+    html.write("<html lang=\"en\">")
 
-        # <head>
-        html.write("<head>")
+    # <head>
+    html.write("<head>")
 
-        # responsive design
-        html.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+    # responsive design
+    html.write(
+      "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
 
-        # <style>
-        html.write("<style>")
-        html.write(":root {")
-        html.write("--background-color: #F0F0F0;")
-        html.write("--text-color: #333333;")
-        html.write("}")
-        html.write("@media (prefers-color-scheme: dark) {")
-        html.write(":root {")
-        html.write("--background-color: #181819;")
-        html.write("--text-color: #b0b0b0;")
-        html.write("}")
-        html.write("}")
-        html.write("* {")
-        html.write("font-family: Helvetica, Verdana, Arial, sans-serif;")
-        html.write("letter-spacing: 0.02em;")
-        html.write("}")
-        html.write("body {")
-        html.write("background-color: var(--background-color);")
-        html.write("color: var(--text-color);")
-        html.write("}")
-        html.write("a {")
-        html.write("text-decoration: none;")
-        html.write("color: rgb(0, 125, 151);")
-        html.write("}")
-        html.write("a:visited {")
-        html.write("color: rgb(125, 49, 134);")
-        html.write("}")
-        html.write("</style>")
+    # <style>
+    html.write("<style>")
+    html.write(":root {")
+    html.write("--background-color: #F0F0F0;")
+    html.write("--text-color: #333333;")
+    html.write("}")
+    html.write("@media (prefers-color-scheme: dark) {")
+    html.write(":root {")
+    html.write("--background-color: #181819;")
+    html.write("--text-color: #b0b0b0;")
+    html.write("}")
+    html.write("}")
+    html.write("* {")
+    html.write("font-family: Helvetica, Verdana, Arial, sans-serif;")
+    html.write("letter-spacing: 0.02em;")
+    html.write("}")
+    html.write("body {")
+    html.write("background-color: var(--background-color);")
+    html.write("color: var(--text-color);")
+    html.write("}")
+    html.write("a {")
+    html.write("text-decoration: none;")
+    html.write("color: rgb(0, 125, 151);")
+    html.write("}")
+    html.write("a:visited {")
+    html.write("color: rgb(125, 49, 134);")
+    html.write("}")
+    html.write("</style>")
 
-        # title
-        html.write("<title>")
-        has_title = False
-        for line in origin.splitlines():
-            if has_title:
-                break
-            if line.startswith("?title:"):
-                line = line.removeprefix("?title:").strip(" ")
-                html.write(line)
-                has_title = True
+    # title
+    html.write("<title>")
+    has_title = False
+    for line in origin.splitlines():
+      if has_title:
+        break
+      if line.startswith("?title:"):
+        line = line.removeprefix("?title:").strip(" ")
+        html.write(line)
+        has_title = True
 
-        for line in origin.splitlines():
-            if has_title:
-                break
-            if line.startswith("#"):
-                line = line.strip(" ").strip("#").strip(" ")
-                html.write(line)
-                has_title = True
+    for line in origin.splitlines():
+      if has_title:
+        break
+      if line.startswith("#"):
+        line = line.strip(" ").strip("#").strip(" ")
+        html.write(line)
+        has_title = True
 
-        html.write("</title>")
+    html.write("</title>")
 
-        html.write("</head>")
+    html.write("</head>")
 
-        # <body>
-        html.write("<body>")
+    # <body>
+    html.write("<body>")
 
-        parser = Parser(origin)
-        tracker = parser.tracker
-        is_paragraph = False
+    parser = Parser(origin)
+    tracker = parser.tracker
+    is_paragraph = False
 
-        while parser.has_next():
-            char = parser.next()
+    while parser.has_next():
+      char = parser.next()
 
-            # not sure if this is needed or not
-            if char == "\r" and parser.peek(1) == "\n":
-                parser.next()
+      # not sure if this is needed or not
+      if char == "\r" and parser.peek(1) == "\n":
+        parser.next()
 
-            if char == "\n":
-                if not parser.has_next():
-                    break
+      if char == "\n":
+        if not parser.has_next():
+          break
 
-                # jump forward to check next chars
-                char = parser.next()
+        # jump forward to check next chars
+        char = parser.next()
 
-                # for special hooks
-                if char == "?":
-                    parser.until("\n")
-                    continue
+        # for special hooks
+        if char == "?":
+          parser.until("\n")
+          continue
 
-                # parsing headers
-                if char == "#":
-                    heading_size = len(parser.when("#")) + 1
+        # parsing headers
+        if char == "#":
+          heading_size = len(parser.when("#")) + 1
 
-                    line = parser.until("\n").strip(" ").rstrip('#').rstrip(" ")
+          line = parser.until("\n").strip(
+            " ").rstrip('#').rstrip(" ")
 
-                    html.write("<h" + str(heading_size) + ">")
-                    html.write(line)
-                    html.write("</h" + str(heading_size) + ">")
-                    continue
+          html.write("<h" + str(heading_size) + ">")
+          html.write(line)
+          html.write("</h" + str(heading_size) + ">")
+          continue
 
-                if char == "-":
+        if char == "-":
 
-                    tracker.save()
-                    parser.when("-")
+          tracker.save()
+          parser.when("-")
 
-                    if parser.peek(1) == "\n":
-                        html.write("<hr/>")
-                        parser.rebase()
-                        continue
+          if parser.peek(1) == "\n":
+            html.write("<hr/>")
+            parser.rebase()
+            continue
 
-                    parser.rollback()
+          parser.rollback()
 
-                    # unordered list
-                    html.write("<ul>")
+          # unordered list
+          html.write("<ul>")
 
-                    indention = 0
-                    level = 0
-                    while True:
-                        html.write("<li>")
+          indention = 0
+          level = 0
+          while True:
+            html.write("<li>")
 
-                        line = parser.until("\n")
+            line = parser.until("\n")
 
-                        html.write(line.strip(" "))
+            html.write(line.strip(" "))
 
-                        html.write("</li>")
+            html.write("</li>")
 
-                        if len(parser.s[parser.i: len(parser.s)].strip()) == 0:
-                            while level > 0:
-                                level -= 1
-                                html.write("</ul>")
-                            break
+            if len(parser.s[parser.i: len(parser.s)].strip()) == 0:
+              while level > 0:
+                level -= 1
+                html.write("</ul>")
+              break
 
-                        parser.checkpoint()
-                        if parser.peek(1) != "-" or level > 0:
-                            this_indention = 0
-                            this_indention += len(parser.when(" "))
-                            char = parser.current()
-                            if this_indention > indention and char == "-":
-                                indention = this_indention
-                                html.write("<ul>")
-                                level += 1
-                                parser.rebase()
-                                continue
-
-                            elif this_indention < indention and char == "-":
-                                indention = this_indention
-                                html.write("</ul>")
-                                level -= 1
-                                parser.rebase()
-                                continue
-
-                            elif char == "-":
-                                parser.rebase()
-                                continue
-
-                            parser.rollback()
-                            break
-                        
-                        parser.rollback()
-                        parser.next()
-
-                    html.write("</ul>")
-                    continue
-
-                # for empty lines
-                if char == "\n":
-                    if is_paragraph:
-                        html.write("</p>")
-                        is_paragraph = False
-                    parser.jump(-1)
-                    continue
-
-                # jump back revert the jump forward character check
-                parser.jump(-1)
+            parser.checkpoint()
+            if parser.peek(1) != "-" or level > 0:
+              this_indention = 0
+              this_indention += len(parser.when(" "))
+              char = parser.current()
+              if this_indention > indention and char == "-":
+                indention = this_indention
+                html.write("<ul>")
+                level += 1
+                parser.rebase()
                 continue
 
-            if not is_paragraph:
-                html.write("<p>")
-                is_paragraph = True
+              elif this_indention < indention and char == "-":
+                indention = this_indention
+                html.write("</ul>")
+                level -= 1
+                parser.rebase()
+                continue
 
-            elif parser.prev() == "\n":
-                html.write(" ")
+              elif char == "-":
+                parser.rebase()
+                continue
 
-            # parsing links
-            if char == "[":
+              parser.rollback()
+              break
 
-                # [link name](link url)
-                link_name = parser.until("]")
-                parser.until("(")
-                link = parser.until(")")
+            parser.rollback()
+            parser.next()
 
-                html.write("<a href=\"" + link.strip(" ") + "\">")
-                html.write(link_name)
-                html.write("</a>")
+          html.write("</ul>")
+          continue
 
-            # img
-            elif char == "!" and parser.peek(1) == "[":
-
-                # ![img name](image link)
-                char = parser.next()
-                img_name = parser.until("]")
-                parser.until("(")
-                img_link = parser.until(")")
-
-                html.write("<img src=\"" + img_link.strip(" ") + "\"")
-                html.write(" alt=\"" + img_name + "\" />")
-
-            # parsing plain text
-            else:
-                html.write(char)
-
-        # end paragraph
-        if is_paragraph:
+        # for empty lines
+        if char == "\n":
+          if is_paragraph:
             html.write("</p>")
             is_paragraph = False
-        html.write("</body>")
+          parser.jump(-1)
+          continue
 
-        # html basics
-        html.write("</html>")
+        # jump back revert the jump forward character check
+        parser.jump(-1)
+        continue
+
+      if not is_paragraph:
+        html.write("<p>")
+        is_paragraph = True
+
+      elif parser.prev() == "\n":
+        html.write(" ")
+
+      # parsing links
+      if char == "[":
+
+        # [link name](link url)
+        link_name = parser.until("]")
+        parser.until("(")
+        link = parser.until(")")
+
+        html.write("<a href=\"" + link.strip(" ") + "\">")
+        html.write(link_name)
+        html.write("</a>")
+
+      # img
+      elif char == "!" and parser.peek(1) == "[":
+
+        # ![img name](image link)
+        char = parser.next()
+        img_name = parser.until("]")
+        parser.until("(")
+        img_link = parser.until(")")
+
+        html.write("<img src=\"" + img_link.strip(" ") + "\"")
+        html.write(" alt=\"" + img_name + "\" />")
+
+      # parsing plain text
+      else:
+        html.write(char)
+
+    # end paragraph
+    if is_paragraph:
+      html.write("</p>")
+      is_paragraph = False
+    html.write("</body>")
+
+    # html basics
+    html.write("</html>")
 
 
 # open directory containing the markdown
 def openRoot(root):
-    for path, subdirs, files in os.walk(root):
-        for name in files:
-            if name.endswith(".md"):
-                openMarkDown(os.path.join(path, name))
-            if name.endswith(".markdown"):
-                openMarkDown(os.path.join(path, name))
+  for path, subdirs, files in os.walk(root):
+    for name in files:
+      if name.endswith(".md"):
+        openMarkDown(os.path.join(path, name))
+      if name.endswith(".markdown"):
+        openMarkDown(os.path.join(path, name))
+
 
 # open all files from current working directory
 openRoot(os.getcwd())
