@@ -20,3 +20,4 @@ Now works with:
 - headers
 - links
 - plain text
+- plain text unordered list
