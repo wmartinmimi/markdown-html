@@ -86,8 +86,6 @@ class Parser():
     self.i += i
 
 # open markdown file for converting to html
-
-
 def openMarkDown(path):
   origin = None
   with open(path, "r") as markdown:
