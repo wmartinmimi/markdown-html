@@ -1,24 +1,85 @@
 import os
 
-# extract string from index "start" to character "trim_char"
+# a parser for easier parsing operations
+class Parser():
 
+    def __init__(self, s):
+        # the string to parse
+        self.s = s
+        # the current character index in string
+        self.i = -1
+        # checkpoints for reverting
+        self.checkpoints = []
 
-def trimTo(origin, start, trim_char):
-    i = start
-    char = origin[i]
-    while char != trim_char:
-        i += 1
-        char = origin[i]
+    # add a checkpoint (stores current index location)
+    # if rebase, remove checkpoint
+    # if rollback, jump back to checkpoint
+    def checkpoint(self):
+        self.checkpoints.insert(0, self.i)
 
-    return origin[start + 1:i]
+    # jump back to previous checkpoint
+    def rollback(self):
+        self.i = self.checkpoints[0]
+        self.rebase()
 
+    # remove previous checkpoint
+    def rebase(self):
+        self.checkpoints = self.checkpoints[1: len(self.checkpoints)]
 
-def newI(i, line):
-    return i + len(line) + 1
+    # move index by 1 and return the next character
+    def next(self):
+        self.i += 1
+        return self.current()
+
+    # return current character
+    def current(self):
+        return self.s[self.i]
+
+    # return previous character
+    def prev(self):
+        if self.i > 0:
+            return self.s[self.i - 1]
+        else:
+            return None
+
+    # check if there are any next character
+    def has_next(self):
+        return not self.peek(1) == None
+
+    # return everything from index to the provided character
+    # new index will be at the character
+    def until(self, char):
+        start = self.i + 1
+        size = len(char)
+        while self.has_next():
+            if self.next() == char:
+                return self.s[start: self.i]
+        return None
+
+    # return everything until the character is not the provided one
+    # new index will be at the new character
+    def when(self, char):
+        start = self.i + 1
+        size = len(char)
+        while self.has_next():
+            if not self.next() == char:
+                return self.s[start: self.i]
+        return None
+
+    # return everything from current index to num ahead
+    # does not affect current index
+    def peek(self, num):
+        if self.i + num >= len(self.s):
+            return None
+        if num == 1:
+            return self.s[self.i + 1]
+        return self.s[self.i: self.i + num]
+
+    # change current index by i
+    def jump(self, i):
+        self.i += i
 
 # open markdown file for converting to html
-
-
 def openMarkDown(path):
     origin = None
     with open(path, "r") as markdown:
@@ -37,8 +98,9 @@ def openMarkDown(path):
 
         # <head>
         html.write("<head>")
-        html.write(
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+
+        # responsive design
+        html.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
 
         # <style>
         html.write("<style>")
@@ -75,7 +137,7 @@ def openMarkDown(path):
             if has_title:
                 break
             if line.startswith("?title:"):
-                line = line.removeprefix("?title:").rstrip(" ")
+                line = line.removeprefix("?title:").strip(" ")
                 html.write(line)
                 has_title = True
 
@@ -83,7 +145,7 @@ def openMarkDown(path):
             if has_title:
                 break
             if line.startswith("#"):
-                line = line.strip("#").strip(" ")
+                line = line.strip(" ").strip("#").strip(" ")
                 html.write(line)
                 has_title = True
 
@@ -94,56 +156,52 @@ def openMarkDown(path):
         # <body>
         html.write("<body>")
 
-        i = 0
-        size = len(origin)
+        parser = Parser(origin)
         is_paragraph = False
 
-        while i < size:
-            char = origin[i]
-            if char == "\n" or i == 0:
+        while parser.has_next():
+            char = parser.next()
 
-                if i + 1 >= size:
+            # not sure if this is needed or not
+            if char == "\r" and parser.peek(1) == "\n":
+                parser.next()
+
+            if char == "\n" or parser.i == 0:
+                parser.checkpoint()
+                if not parser.has_next():
                     break
 
-                # for first chars
-                if not i == 0:
-                    i += 1
-                    char = origin[i]
+                # for non-first chars
+                if not parser.i == 0:
+                    char = parser.next()
 
                 # for special hooks
                 if char == "?":
-                    line = trimTo(origin, i, "\n")
-                    i = newI(i, line)
+                    parser.until("\n")
+                    parser.rebase()
 
                 # parsing headers
                 elif char == "#":
-                    heading_size = 0
-                    while char == "#":
-                        i += 1
-                        char = origin[i]
-                        heading_size += 1
+                    heading_size = len(parser.when("#")) + 1
 
-                    line = trimTo(origin, i, "\n")
-                    i = newI(i, line)
+                    line = parser.until("\n").strip(" ").rstrip('#').rstrip(" ")
 
-                    line = line.lstrip(" ").rstrip("#").rstrip(" ")
-                    if heading_size > 0:
-                        html.write("<h" + str(heading_size) + ">")
-                        html.write(line)
-                        html.write("</h" + str(heading_size) + ">")
+                    html.write("<h" + str(heading_size) + ">")
+                    html.write(line)
+                    html.write("</h" + str(heading_size) + ">")
+                    parser.rebase()
 
                 elif char == "-":
 
-                    # horizontal line
-                    t = i
-                    while char == "-":
-                        t += 1
-                        char = origin[t]
+                    parser.checkpoint()
+                    parser.when("-")
 
-                    if origin[t + 1] == "\n":
-                        i = t
+                    if parser.peek(1) == "\n":
                         html.write("<hr/>")
+                        parser.rebase()
                         continue
+
+                    parser.rollback()
 
                     # unordered list
                     html.write("<ul>")
@@ -153,51 +211,49 @@ def openMarkDown(path):
                     while True:
                         html.write("<li>")
 
-                        line = trimTo(origin, i, "\n")
-                        i = newI(i, line)
+                        line = parser.until("\n")
 
                         html.write(line.strip(" "))
 
                         html.write("</li>")
 
-                        if len(origin) <= i + 1:
+                        if len(parser.s[parser.i: len(parser.s)].strip()) == 0:
                             while level > 0:
                                 level -= 1
                                 html.write("</ul>")
                             break
 
-                        if origin[i + 1] != "-" or level > 0:
+                        parser.checkpoint()
+                        if parser.peek(1) != "-" or level > 0:
                             this_indention = 0
-                            t = i + 1
-                            char = origin[t]
-                            while len(origin) > t and char == " ":
-                                this_indention += 1
-                                t += 1
-                                char = origin[t]
-
-                            if this_indention > indention and origin[t] == "-":
+                            this_indention += len(parser.when(" "))
+                            char = parser.current()
+                            if this_indention > indention and char == "-":
                                 indention = this_indention
                                 html.write("<ul>")
-                                i = t
                                 level += 1
+                                parser.rebase()
                                 continue
 
-                            elif this_indention < indention and origin[t] == "-":
+                            elif this_indention < indention and char == "-":
                                 indention = this_indention
                                 html.write("</ul>")
-                                i = t
                                 level -= 1
+                                parser.rebase()
                                 continue
 
-                            elif origin[t] == "-":
-                                i = t
+                            elif char == "-":
+                                parser.rebase()
                                 continue
 
+                            parser.rollback()
                             break
-
-                        i += 1
+                        
+                        parser.rollback()
+                        parser.next()
 
                     html.write("</ul>")
+                    parser.rebase()
                     continue
 
                 # for empty lines
@@ -205,55 +261,41 @@ def openMarkDown(path):
                     if is_paragraph:
                         html.write("</p>")
                         is_paragraph = False
+                    parser.rebase()
+                    parser.jump(-1)
                     continue
 
                 else:
-                    i -= 1
-                i += 1
+                    parser.rollback()
                 continue
 
             if not is_paragraph:
                 html.write("<p>")
                 is_paragraph = True
 
-            elif origin[i - 1] == "\n":
+            elif parser.prev() == "\n":
                 html.write(" ")
 
             # parsing links
             if char == "[":
 
-                link_name = trimTo(origin, i, "]")
-                i = newI(i, link_name)
-
-                char = origin[i]
-
-                while not char == "(":
-                    i += 1
-                    char = origin[i]
-
-                link = trimTo(origin, i, ")")
-                i = newI(i, link)
+                # [link name](link url)
+                link_name = parser.until("]")
+                parser.until("(")
+                link = parser.until(")")
 
                 html.write("<a href=\"" + link.strip(" ") + "\">")
                 html.write(link_name)
                 html.write("</a>")
 
             # img
-            elif char == "!" and origin[i + 1] == "[":
-                i += 1
-                char = origin[i]
+            elif char == "!" and parser.peek(1) == "[":
 
-                img_name = trimTo(origin, i, "]")
-                i = newI(i, img_name)
-
-                char = origin[i]
-
-                while not char == "(":
-                    i += 1
-                    char = origin[i]
-
-                img_link = trimTo(origin, i, ")")
-                i = newI(i, img_link)
+                # ![img name](image link)
+                char = parser.next()
+                img_name = parser.until("]")
+                parser.until("(")
+                img_link = parser.until(")")
 
                 html.write("<img src=\"" + img_link.strip(" ") + "\"")
                 html.write(" alt=\"" + img_name + "\" />")
@@ -261,8 +303,6 @@ def openMarkDown(path):
             # parsing plain text
             else:
                 html.write(char)
-
-            i += 1
 
         # end paragraph
         if is_paragraph:
@@ -273,9 +313,8 @@ def openMarkDown(path):
         # html basics
         html.write("</html>")
 
+
 # open directory containing the markdown
-
-
 def openRoot(root):
     for path, subdirs, files in os.walk(root):
         for name in files:
@@ -284,5 +323,5 @@ def openRoot(root):
             if name.endswith(".markdown"):
                 openMarkDown(os.path.join(path, name))
 
-
+# open all files from current working directory
 openRoot(os.getcwd())
