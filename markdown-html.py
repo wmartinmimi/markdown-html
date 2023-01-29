@@ -167,10 +167,11 @@ def openMarkDown(path):
                 parser.next()
 
             if char == "\n" or parser.i == 0:
-                parser.checkpoint()
                 if not parser.has_next():
                     break
 
+                # record current index
+                parser.checkpoint()
                 # for non-first chars
                 if not parser.i == 0:
                     char = parser.next()
@@ -179,9 +180,10 @@ def openMarkDown(path):
                 if char == "?":
                     parser.until("\n")
                     parser.rebase()
+                    continue
 
                 # parsing headers
-                elif char == "#":
+                if char == "#":
                     heading_size = len(parser.when("#")) + 1
 
                     line = parser.until("\n").strip(" ").rstrip('#').rstrip(" ")
@@ -190,8 +192,9 @@ def openMarkDown(path):
                     html.write(line)
                     html.write("</h" + str(heading_size) + ">")
                     parser.rebase()
+                    continue
 
-                elif char == "-":
+                if char == "-":
 
                     parser.checkpoint()
                     parser.when("-")
@@ -257,7 +260,7 @@ def openMarkDown(path):
                     continue
 
                 # for empty lines
-                elif char == "\n":
+                if char == "\n":
                     if is_paragraph:
                         html.write("</p>")
                         is_paragraph = False
@@ -265,8 +268,8 @@ def openMarkDown(path):
                     parser.jump(-1)
                     continue
 
-                else:
-                    parser.rollback()
+                # rollback to previous index if changed by nextline check
+                parser.rollback()
                 continue
 
             if not is_paragraph:
