@@ -144,13 +144,6 @@ def openMarkDown(path):
     # title
     html.write("<title>")
     has_title = False
-    for line in origin.splitlines():
-      if has_title:
-        break
-      if line.startswith("?title:"):
-        line = line.removeprefix("?title:").strip(" ")
-        html.write(line)
-        has_title = True
 
     for line in origin.splitlines():
       if has_title:
@@ -185,17 +178,11 @@ def openMarkDown(path):
         # jump forward to check next chars
         char = parser.next()
 
-        # for special hooks
-        if char == "?":
-          parser.until("\n")
-          continue
-
         # parsing headers
         if char == "#":
           heading_size = len(parser.when("#")) + 1
 
-          line = parser.until("\n").strip(
-            " ").rstrip('#').rstrip(" ")
+          line = parser.until("\n").strip(" ").rstrip('#').rstrip(" ")
 
           html.write("<h" + str(heading_size) + ">")
           html.write(line)
@@ -204,6 +191,7 @@ def openMarkDown(path):
 
         if char == "-":
 
+          # --- horizontal line
           tracker.save()
           parser.when("-")
 
