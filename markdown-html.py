@@ -89,6 +89,9 @@ def openMarkDown(path):
         print("Cannot open: " + path)
         return
 
+    # easier parsing for later
+    origin = "\n" + origin
+
     html_name = path[0:path.rfind(".")] + '.html'
 
     with open(html_name, 'w') as html:
@@ -130,6 +133,7 @@ def openMarkDown(path):
         html.write("color: rgb(125, 49, 134);")
         html.write("}")
         html.write("</style>")
+
         # title
         html.write("<title>")
         has_title = False
@@ -166,20 +170,16 @@ def openMarkDown(path):
             if char == "\r" and parser.peek(1) == "\n":
                 parser.next()
 
-            if char == "\n" or parser.i == 0:
+            if char == "\n":
                 if not parser.has_next():
                     break
 
-                # record current index
-                parser.checkpoint()
-                # for non-first chars
-                if not parser.i == 0:
-                    char = parser.next()
+                # jump forward to check next chars
+                char = parser.next()
 
                 # for special hooks
                 if char == "?":
                     parser.until("\n")
-                    parser.rebase()
                     continue
 
                 # parsing headers
@@ -191,7 +191,6 @@ def openMarkDown(path):
                     html.write("<h" + str(heading_size) + ">")
                     html.write(line)
                     html.write("</h" + str(heading_size) + ">")
-                    parser.rebase()
                     continue
 
                 if char == "-":
@@ -256,7 +255,6 @@ def openMarkDown(path):
                         parser.next()
 
                     html.write("</ul>")
-                    parser.rebase()
                     continue
 
                 # for empty lines
@@ -264,12 +262,11 @@ def openMarkDown(path):
                     if is_paragraph:
                         html.write("</p>")
                         is_paragraph = False
-                    parser.rebase()
                     parser.jump(-1)
                     continue
 
-                # rollback to previous index if changed by nextline check
-                parser.rollback()
+                # jump back revert the jump forward character checl
+                parser.jump(-1)
                 continue
 
             if not is_paragraph:
