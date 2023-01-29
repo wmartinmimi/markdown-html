@@ -143,15 +143,12 @@ def openMarkDown(path):
 
     # title
     html.write("<title>")
-    has_title = False
 
     for line in origin.splitlines():
-      if has_title:
-        break
       if line.startswith("#"):
         line = line.strip(" ").strip("#").strip(" ")
         html.write(line)
-        has_title = True
+        break
 
     html.write("</title>")
 
