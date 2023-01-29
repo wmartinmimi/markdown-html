@@ -1,83 +1,98 @@
 import os
 
+class Tracker():
+
+  def __init__(self, parser):
+    self.parser = parser
+
+  def save(self):
+    self.parser.checkpoint()
+
+  def overwrite(self):
+    self.parser.rebase()
+
+  def reload(self):
+    self.parser.rollback()
+
 # a parser for easier parsing operations
 class Parser():
 
-    def __init__(self, s):
-        # the string to parse
-        self.s = s
-        # the current character index in string
-        self.i = -1
-        # checkpoints for reverting
-        self.checkpoints = []
+  def __init__(self, s):
+    # the string to parse
+    self.s = s
+    # the current character index in string
+    self.i = -1
+    # checkpoints for reverting
+    self.checkpoints = []
+    self.tracker = Tracker(self)
 
-    # add a checkpoint (stores current index location)
-    # if rebase, remove checkpoint
-    # if rollback, jump back to checkpoint
-    def checkpoint(self):
-        self.checkpoints.insert(0, self.i)
+  # add a checkpoint (stores current index location)
+  # if rebase, remove checkpoint
+  # if rollback, jump back to checkpoint
+  def checkpoint(self):
+    self.checkpoints.insert(0, self.i)
 
-    # jump back to previous checkpoint
-    def rollback(self):
-        self.i = self.checkpoints[0]
-        self.rebase()
+  # jump back to previous checkpoint
+  def rollback(self):
+    self.i = self.checkpoints[0]
+    self.rebase()
 
-    # remove previous checkpoint
-    def rebase(self):
-        self.checkpoints = self.checkpoints[1: len(self.checkpoints)]
+  # remove previous checkpoint
+  def rebase(self):
+    self.checkpoints = self.checkpoints[1: len(self.checkpoints)]
 
-    # move index by 1 and return the next character
-    def next(self):
-        self.i += 1
-        return self.current()
+  # move index by 1 and return the next character
+  def next(self):
+    self.i += 1
+    return self.current()
 
-    # return current character
-    def current(self):
-        return self.s[self.i]
+  # return current character
+  def current(self):
+    return self.s[self.i]
 
-    # return previous character
-    def prev(self):
-        if self.i > 0:
-            return self.s[self.i - 1]
-        else:
-            return None
+  # return previous character
+  def prev(self):
+    if self.i > 0:
+      return self.s[self.i - 1]
+    else:
+      return None
 
-    # check if there are any next character
-    def has_next(self):
-        return not self.peek(1) == None
+  # check if there are any next character
+  def has_next(self):
+    return not self.peek(1) == None
 
-    # return everything from index to the provided character
-    # new index will be at the character
-    def until(self, char):
-        start = self.i + 1
-        size = len(char)
-        while self.has_next():
-            if self.next() == char:
-                return self.s[start: self.i]
-        return None
+  # return everything from index to the provided character
+  # new index will be at the character
+  def until(self, char):
+    start = self.i + 1
+    size = len(char)
+    while self.has_next():
+      if self.next() == char:
+        return self.s[start: self.i]
+    return None
 
-    # return everything until the character is not the provided one
-    # new index will be at the new character
-    def when(self, char):
-        start = self.i + 1
-        size = len(char)
-        while self.has_next():
-            if not self.next() == char:
-                return self.s[start: self.i]
-        return None
+  # return everything until the character is not the provided one
+  # new index will be at the new character
+  def when(self, char):
+    start = self.i + 1
+    size = len(char)
+    while self.has_next():
+      if not self.next() == char:
+        return self.s[start: self.i]
+    return None
 
-    # return everything from current index to num ahead
-    # does not affect current index
-    def peek(self, num):
-        if self.i + num >= len(self.s):
-            return None
-        if num == 1:
-            return self.s[self.i + 1]
-        return self.s[self.i: self.i + num]
+  # return everything from current index to num ahead
+  # does not affect current index
+  def peek(self, num):
+    if self.i + num >= len(self.s):
+      return None
+    if num == 1:
+      return self.s[self.i + 1]
+    return self.s[self.i: self.i + num]
 
-    # change current index by i
-    def jump(self, i):
-        self.i += i
+  # change current index by i
+  def jump(self, i):
+    self.i += i
 
 # open markdown file for converting to html
 def openMarkDown(path):
@@ -161,6 +176,7 @@ def openMarkDown(path):
         html.write("<body>")
 
         parser = Parser(origin)
+        tracker = parser.tracker
         is_paragraph = False
 
         while parser.has_next():
@@ -195,7 +211,7 @@ def openMarkDown(path):
 
                 if char == "-":
 
-                    parser.checkpoint()
+                    tracker.save()
                     parser.when("-")
 
                     if parser.peek(1) == "\n":
@@ -265,7 +281,7 @@ def openMarkDown(path):
                     parser.jump(-1)
                     continue
 
-                # jump back revert the jump forward character checl
+                # jump back revert the jump forward character check
                 parser.jump(-1)
                 continue
 
