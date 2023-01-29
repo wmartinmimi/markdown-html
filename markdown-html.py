@@ -21,8 +21,6 @@ class Tracker():
     self.discard()
 
 # a parser for easier parsing operations
-
-
 class Parser():
 
   def __init__(self, s):
@@ -109,37 +107,40 @@ def openMarkDown(path):
     html.write("<head>")
 
     # responsive design
-    html.write(
-      "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+    html.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
 
-    # <style>
-    html.write("<style>")
-    html.write(":root {")
-    html.write("--background-color: #F0F0F0;")
-    html.write("--text-color: #333333;")
-    html.write("}")
-    html.write("@media (prefers-color-scheme: dark) {")
-    html.write(":root {")
-    html.write("--background-color: #181819;")
-    html.write("--text-color: #b0b0b0;")
-    html.write("}")
-    html.write("}")
-    html.write("* {")
-    html.write("font-family: Helvetica, Verdana, Arial, sans-serif;")
-    html.write("letter-spacing: 0.02em;")
-    html.write("}")
-    html.write("body {")
-    html.write("background-color: var(--background-color);")
-    html.write("color: var(--text-color);")
-    html.write("}")
-    html.write("a {")
-    html.write("text-decoration: none;")
-    html.write("color: rgb(0, 125, 151);")
-    html.write("}")
-    html.write("a:visited {")
-    html.write("color: rgb(125, 49, 134);")
-    html.write("}")
-    html.write("</style>")
+    # styling  
+    styles = [
+      "<style>",
+      ":root {",
+      "--background-color: #F0F0F0;",
+      "--text-color: #333333;",
+      "}",
+      "@media (prefers-color-scheme: dark) {",
+      ":root {",
+      "--background-color: #181819;",
+      "--text-color: #b0b0b0;",
+      "}",
+      "}",
+      "* {",
+      "font-family: Helvetica, Verdana, Arial, sans-serif;",
+      "letter-spacing: 0.02em;",
+      "}",
+      "body {",
+      "background-color: var(--background-color);",
+      "color: var(--text-color);",
+      "}",
+      "a {",
+      "text-decoration: none;",
+      "color: rgb(0, 125, 151);",
+      "}",
+      "a:visited {",
+      "color: rgb(125, 49, 134);",
+      "}",
+      "</style>"
+    ]
+    for style in styles:
+      html.write(style)
 
     # title
     html.write("<title>")
@@ -151,7 +152,6 @@ def openMarkDown(path):
         break
 
     html.write("</title>")
-
     html.write("</head>")
 
     # <body>
@@ -302,9 +302,9 @@ def openMarkDown(path):
     if is_paragraph:
       html.write("</p>")
       is_paragraph = False
-    html.write("</body>")
 
     # html basics
+    html.write("</body>")
     html.write("</html>")
 
 
