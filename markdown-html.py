@@ -1,19 +1,24 @@
 import os
 
-
+# track the index of the parser
 class Tracker():
 
   def __init__(self, parser):
     self.parser = parser
+    self.tracked = []
 
+  # save current index location
   def save(self):
-    self.parser.checkpoint()
+    self.tracked.insert(0, self.parser.i)
 
-  def overwrite(self):
-    self.parser.rebase()
+  # discard saved index
+  def discard(self):
+    self.tracked = self.tracked[1: len(self.tracked)]
 
-  def reload(self):
-    self.parser.rollback()
+  # revert current index to saved index
+  def revert(self):
+    self.parser.i = self.tracked[0]
+    self.discard()
 
 # a parser for easier parsing operations
 
@@ -25,29 +30,12 @@ class Parser():
     self.s = s
     # the current character index in string
     self.i = -1
-    # checkpoints for reverting
-    self.checkpoints = []
     self.tracker = Tracker(self)
 
-  # add a checkpoint (stores current index location)
-  # if rebase, remove checkpoint
-  # if rollback, jump back to checkpoint
-  def checkpoint(self):
-    self.checkpoints.insert(0, self.i)
-
-  # jump back to previous checkpoint
-  def rollback(self):
-    self.i = self.checkpoints[0]
-    self.rebase()
-
-  # remove previous checkpoint
-  def rebase(self):
-    self.checkpoints = self.checkpoints[1: len(self.checkpoints)]
-
   # move index by 1 and return the next character
-    def next(self):
-      self.i += 1
-      return self.current()
+  def next(self):
+    self.i += 1
+    return self.current()
 
   # return current character
   def current(self):
@@ -223,10 +211,10 @@ def openMarkDown(path):
 
           if parser.peek(1) == "\n":
             html.write("<hr/>")
-            parser.rebase()
+            tracker.discard()
             continue
 
-          parser.rollback()
+          tracker.revert()
 
           # unordered list
           html.write("<ul>")
@@ -248,7 +236,7 @@ def openMarkDown(path):
                 html.write("</ul>")
               break
 
-            parser.checkpoint()
+            tracker.save()
             if parser.peek(1) != "-" or level > 0:
               this_indention = 0
               this_indention += len(parser.when(" "))
@@ -257,24 +245,24 @@ def openMarkDown(path):
                 indention = this_indention
                 html.write("<ul>")
                 level += 1
-                parser.rebase()
+                tracker.discard()
                 continue
 
               elif this_indention < indention and char == "-":
                 indention = this_indention
                 html.write("</ul>")
                 level -= 1
-                parser.rebase()
+                tracker.discard()
                 continue
 
               elif char == "-":
-                parser.rebase()
+                tracker.discard()
                 continue
 
-              parser.rollback()
+              tracker.revert()
               break
 
-            parser.rollback()
+            tracker.revert()
             parser.next()
 
           html.write("</ul>")
